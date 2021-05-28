@@ -11,25 +11,6 @@ type PromisedStore<K, V> = {
     delete(key: K): Promise<void>
 }
 
-
-
-// export function makePromisedStore<K, V>(): PromisedStore<K, V> {
-//     let promiseStore: Map<K, Promise<V>> = new Map()
-//     return {
-//         get(key: K) {
-//             const promise: Promise<V> | undefined = promiseStore.get(key)
-//             return promise === undefined ? new Promise<V>((resolve, reject) => reject(MISSING_KEY)) : promise
-//         },
-//         set(key: K, value: V) {
-//             promiseStore.set(key, new Promise<V>((resolve, reject) => resolve(value)))
-//             return new Promise<void>((resolve, reject) => resolve())
-//         },
-//         delete(key: K) {
-//             return promiseStore.delete(key) ? new Promise<void>((resolve, reject) => {resolve()}) : new Promise<void>((resolve, reject) => reject(MISSING_KEY))
-//         },
-//     }
-// }
-
 export function makePromisedStore<K, V>(): PromisedStore<K, V> {
     let promiseStore: Map<K, V> = new Map()
     return {
@@ -38,7 +19,6 @@ export function makePromisedStore<K, V>(): PromisedStore<K, V> {
             return new Promise<V>(((resolve, reject) => val !== undefined ? resolve(val) : reject(MISSING_KEY)))
         },
         set(key: K, value: V) {
-            // promiseStore.set(key, value)
             return new Promise<void>((resolve) => {
                 promiseStore.set(key, value)
                 resolve()
