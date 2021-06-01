@@ -66,18 +66,18 @@ describe('2.3 (lazy generators)', () => {
 
 describe('2.4 (asyncWaterfallWithRetry)', () => {
     it('executes sequence', async () => {
-        const v = await asyncWaterfallWithRetry([async () => 1, async (v: number) => v + 1, async (v: number) => v * 2 ])
+        const v = await asyncWaterfallWithRetry([async () => 1, async (v: any) => v + 1, async (v: any) => v * 2 ])
         expect(v).to.equal(4)
     })
 
     it('retries twice', async () => {
         let attempt = 1
-        const v = await asyncWaterfallWithRetry([async () => 1, async (v: number) => {
+        const v = await asyncWaterfallWithRetry([async () => 1, async (v: any) => {
             if (attempt == 3)
                 return v + 1
             attempt += 1
             throw Error()
-        }, async (v: number) => v * 2 ])
+        }, async (v: any) => v * 2 ])
         expect(v).to.equal(4)
     }).timeout(5000)
 })
