@@ -9,10 +9,11 @@ import * as T from "./TExp51";
 import { allT, first, rest, isEmpty } from "../shared/list";
 import { isNumber, isString } from '../shared/type-predicates';
 import {Result, makeFailure, makeOk, bind, safe2, zipWithResult, mapResult, isOk} from "../shared/result";
-import {makePairTExp, makeSymbolTExp, makeVoidTExp} from "./TExp51";
-import {isDefineExp, makeProgram} from "./L51-ast";
-import {makeExtendTEnv} from "../imp/TEnv";
+import {makeClassTExp, makePairTExp, makeSymbolTExp, makeVoidTExp} from "./TExp51";
+import {Binding, isDefineExp, makeProgram, parsedToClassExps, ClassExp, VarDecl} from "./L51-ast";
+import {makeEmptyTEnv, makeExtendTEnv} from "../imp/TEnv";
 import {isCompoundSExp, isSymbolSExp} from "../imp/L5-value";
+import {flatten, map, zipWith} from "ramda";
 
 // Purpose: Make type expressions equivalent by deriving a unifier
 // Return an error if the types are not unifiable.
@@ -106,8 +107,10 @@ const checkNoOccurrence = (tvar: T.TVar, te: T.TExp, exp: A.Exp): Result<true> =
 // so that the user defined types are known to the type inference system.
 // For each class (class : typename ...) add a pair <class.typename classTExp> to TEnv
 export const makeTEnvFromClasses = (parsed: A.Parsed): E.TEnv => {
-    // TODO makeTEnvFromClasses
-    return E.makeEmptyTEnv();
+    const classes:ClassExp[] = parsedToClassExps(parsed)
+    const fieldsNames:string[] = R.flatten(R.map((c: ClassExp)=>map((vardecl:VarDecl)=>vardecl.var,c.fields),classes))
+    const fieldsTypes: T.TExp[] = R.flatten(R.map((c: ClassExp)=>map((vardecl:VarDecl)=>vardecl.texp,c.fields),classes))
+    return E.makeExtendTEnv(fieldsNames,fieldsTypes,E.makeExtendTEnv(R.map((c:ClassExp)=>c.typeName.var,classes),R.map((c:ClassExp)=>c.typeName,classes),makeEmptyTEnv()));
 }
 
 // Purpose: Compute the type of a concrete expression
@@ -307,7 +310,10 @@ export const typeofSet = (exp: A.SetExp, tenv: E.TEnv): Result<T.VoidTExp> => {
 // If   type<method_1>(class-tenv) = m1
 //      ...
 //      type<method_k>(class-tenv) = mk
-// Then type<class(type fields methods)>(tend) = = [t1 * ... * tn -> type]
+// Then type<class(type fields methods)>(tenv) = = [t1 * ... * tn -> type]
 export const typeofClass = (exp: A.ClassExp, tenv: E.TEnv): Result<T.TExp> => {
-    return makeFailure("TODO typeofClass");
+    const ct:string = exp.typeName.var
+    const methondsNames:string[] = R.map((b:Binding)=>b.var.var,exp.methods)
+    const methodsTypes: Result<T.TExp[]> = mapResult((b:Binding)=>typeofExp(b.val,tenv),exp.methods)
+    return bind(methodsTypes,(texp:T.TExp[])=>makeOk(makeClassTExp(ct,zipWith((name:string,returnTE:T.TExp)=>[name,returnTE],methondsNames,texp))))
 };

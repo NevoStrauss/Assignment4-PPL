@@ -1,10 +1,12 @@
 // L51-typecheck
 // ========================================================
 import { equals, map, zipWith } from 'ramda';
-import { isAppExp, isBoolExp, isDefineExp, isIfExp, isLetrecExp, isLetExp, isNumExp,
-         isPrimOp, isProcExp, isProgram, isStrExp, isVarRef, parseL5Exp, unparse,
-         AppExp, BoolExp, DefineExp, Exp, IfExp, LetrecExp, LetExp, NumExp,
-         Parsed, PrimOp, ProcExp, Program, StrExp } from "./L51-ast";
+import {
+    isAppExp, isBoolExp, isDefineExp, isIfExp, isLetrecExp, isLetExp, isNumExp,
+    isPrimOp, isProcExp, isProgram, isStrExp, isVarRef, parseL5Exp, unparse,
+    AppExp, BoolExp, DefineExp, Exp, IfExp, LetrecExp, LetExp, NumExp,
+    Parsed, PrimOp, ProcExp, Program, StrExp, makeProgram
+} from "./L51-ast";
 import { applyTEnv, makeEmptyTEnv, makeExtendTEnv, TEnv } from "../imp/TEnv";
 import { isProcTExp, makeBoolTExp, makeNumTExp, makeProcTExp, makeStrTExp, makeVoidTExp,
          parseTE, unparseTExp,
@@ -12,6 +14,10 @@ import { isProcTExp, makeBoolTExp, makeNumTExp, makeProcTExp, makeStrTExp, makeV
 import { isEmpty, allT, first, rest } from '../shared/list';
 import { Result, makeFailure, bind, makeOk, safe3, safe2, zipWithResult } from '../shared/result';
 import { parse as p } from "../shared/parser";
+import * as A from "./L51-ast";
+import * as E from "../imp/TEnv";
+import * as T from "./TExp51";
+import * as TI from "./L51-typeinference";
 
 // Purpose: Check that type expressions are equivalent
 // as part of a fully-annotated type check process of exp.
@@ -202,11 +208,13 @@ export const typeofLetrec = (exp: LetrecExp, tenv: TEnv): Result<TExp> => {
 //   (define (var : texp) val)
 // Not implemented
 export const typeofDefine = (exp: DefineExp, tenv: TEnv): Result<VoidTExp> => {
-    return makeOk(makeVoidTExp());
+    return TI.typeofDefine(exp,tenv)
 };
 
 // Purpose: compute the type of a program
 // Typing rule:
 // Not implemented: Thread the TEnv (as in L1)
+
 export const typeofProgram = (exp: Program, tenv: TEnv): Result<TExp> =>
-    makeFailure("Not implemented");
+    TI.typeofProgram(exp,tenv)
+

@@ -212,7 +212,7 @@ describe('L5 Type Inference', () => {
 
         it('infers the type of class', () => {
             expect(verifyTeOfExprWithInference("(class : c1 ((field1 : number)) ((get (lambda () : number field1))))", 
-                                               "(number -> (class cell (get : (Empty -> number))))")).to.deep.equal(makeOk(true));
+                                               "(number -> (class c1 (get : (Empty -> number))))")).to.deep.equal(makeOk(true));
         });
 
         it('infers the type of a class constructor', () => {

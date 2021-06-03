@@ -5,7 +5,6 @@ import chai, { expect } from 'chai';
 import { asyncWaterfallWithRetry,lazyMap, lazyFilter,  asyncMemo, getAll,makePromisedStore, MISSING_KEY } from '../src/part2';
 
 import chaiAsPromised from 'chai-as-promised'
-import {expComponents} from "../../part3/src/L51-ast";
 
 chai.use(chaiAsPromised)
 
