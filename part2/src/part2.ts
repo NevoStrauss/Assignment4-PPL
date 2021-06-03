@@ -81,101 +81,37 @@ export function lazyMap<T, R>(genFn: () => Generator<T>, mapFn: (elem: T) => R):
 
 
 export async function asyncWaterfallWithRetry(fns: [() => Promise<any>, ...{ (elem: any):Promise<any> }[]]): Promise<any> {
-    let currPromise:Promise<any> = fns[0]()
+    let currPromise:Promise<any> = fns[0]().catch(() => {
+        return new Promise<any>(((resolve, reject) =>
+            setTimeout(() => {
+                resolve(fns[0]().catch(() => {
+                    return new Promise<any>(((resolve1, reject1) => {
+                        setTimeout(() => {
+                            resolve1(fns[0]().catch((err) => {
+                                reject1(err)
+                            }))
+                        }, 2000)
+                    }))
+                }))
+            }, 2000)))
+    })
     const rest: { (elem: any): Promise<any> }[] = fns.slice(1)
     for (let i = 0; i < rest.length; i++) {
-        const curr:any = await currPromise
-        console.log(curr)
-        currPromise = rest[i](curr).catch((err)=>{
-            console.log("first fail")
-            setTimeout(()=>null,2000)
-            return rest[i](curr).catch((err)=>{
-                console.log("second fail")
-                setTimeout(()=>null,2000)
-                return rest[i](curr).catch((err)=>{
-                    console.log("failed 3 times, exiting...")
-                    console.log(err)
-                    throw err
-                })
-            })
+        const curr: any = await currPromise
+        currPromise = rest[i](curr).catch(() => {
+            return new Promise<any>(((resolve) =>
+                setTimeout(() => {
+                    resolve(rest[i](curr).catch(() => {
+                        return new Promise<any>(((resolve1, reject1) => {
+                            setTimeout(() => {
+                                resolve1(rest[i](curr).catch((err) => {
+                                    reject1(err)
+                                }))
+                            }, 2000)
+                        }))
+                    }))
+                }, 2000)))
         })
     }
     return await currPromise
 }
-
-// export async function asyncWaterfallWithRetry(fns: [() => Promise<any>, ...func[]]): Promise<any> {
-//     let first: Promise<any> = fns[0]()
-//     const rest:func[] = fns.slice(1)
-//
-//     function* applyAllFunctions():Generator<number>{
-//         for (let i = 0; i < rest.length; i++) {
-//             yield i
-//         }
-//     }
-//
-//     let gen = applyAllFunctions()
-//     let curr = gen.next()
-//     const timeOutPromise: Promise<any> = new Promise(resolve => setTimeout(resolve, 2000))
-//     const tryFirst = ():any =>{
-//         first.then(res => {
-//             console.log(res)
-//             return res
-//         })
-//             .catch(() => {
-//                 timeOutPromise.then()
-//                 first.then(res => {
-//                     return res
-//                 })
-//                     .catch(() => {
-//                         timeOutPromise.then()
-//                         first.then((res) => {
-//                             return res
-//                         })
-//                             .catch(() => {
-//                                 return false
-//                             })
-//                     })
-//             })
-//     }
-//
-//
-//
-//     let currentRes = await first
-//     console.log(currentRes)
-//     if (!currentRes) {
-//         console.log("here")
-//         // return
-//     }
-//     curr = gen.next()
-//     while (!curr.done){
-//         rest[curr.value].apply(currentRes).then(res => {
-//             curr = gen.next()
-//             currentRes = res
-//         })
-//             .catch(() => {
-//                 timeOutPromise.then()
-//                 rest[curr.value].apply(currentRes).then(res => {
-//                     curr = gen.next()
-//                     currentRes = res
-//                 }).catch(() => {
-//                     timeOutPromise.then()
-//                     rest[curr.value].apply(currentRes).then(res => {
-//                         curr = gen.next()
-//                         currentRes = res
-//                     })
-//                         .catch((err) => {
-//                             throw err
-//                         })
-//                 })
-//             })
-//     }
-// }
-
-
-
-
-
-
-
-
-

@@ -166,12 +166,12 @@ describe('L5 Type Inference', () => {
         });
 
         it('infers the type of quoted literal expressions', () => {
-            const program1 = 
+            const program1 =
             `(L5 (define x 'a)
                  x)`;
             expect(verifyTeOfExprWithInference(program1, `symbol`)).to.deep.equal(makeOk(true));
-            
-            const program2 = 
+
+            const program2 =
             `(L5 (define f (lambda ((x : symbol)) x))
                  f)`;
             expect(verifyTeOfExprWithInference(program2, `(symbol -> symbol)`)).to.deep.equal(makeOk(true));
@@ -189,22 +189,22 @@ describe('L5 Type Inference', () => {
                  (cons x x))`;
             expect(verifyTeOfExprWithInference(program1, `cons`)).to.deep.equal(makeOk(true));
 
-            const program2 = 
+            const program2 =
             `(L5 (define x '(a b))
                  (car x))`;
             expect(verifyTeOfExprWithInference(program2, `T`)).to.deep.equal(makeOk(true));
 
-            const program3 = 
+            const program3 =
             `(L5 (define x '(a b))
                  (cdr x))`;
             expect(verifyTeOfExprWithInference(program3, `T`)).to.deep.equal(makeOk(true));
 
-            const program4 = 
+            const program4 =
             `(L5 (define x 'a)
                  (car x))`;
             expect(verifyTeOfExprWithInference(program4, `T`)).to.satisfy(isFailure);
 
-            const program5 = 
+            const program5 =
             `(L5 (define x 'a)
                  (cdr x))`;
             expect(verifyTeOfExprWithInference(program5, `T`)).to.satisfy(isFailure);
