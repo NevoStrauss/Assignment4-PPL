@@ -9,7 +9,7 @@ import * as T from "./TExp51";
 import { allT, first, rest, isEmpty } from "../shared/list";
 import { isNumber, isString } from '../shared/type-predicates';
 import {Result, makeFailure, makeOk, bind, safe2, zipWithResult, mapResult, isOk} from "../shared/result";
-import {makeClassTExp, makePairTExp, makeSymbolTExp, makeVoidTExp} from "./TExp51";
+import {makeClassTExp, makePairTExp, makeProcTExp, makeSymbolTExp, makeVoidTExp} from "./TExp51";
 import {Binding, isDefineExp, makeProgram, parsedToClassExps, ClassExp, VarDecl} from "./L51-ast";
 import {makeEmptyTEnv, makeExtendTEnv} from "../imp/TEnv";
 import {isCompoundSExp, isSymbolSExp} from "../imp/L5-value";
@@ -248,9 +248,8 @@ export const typeofLetrec = (exp: A.LetrecExp, tenv: E.TEnv): Result<T.TExp> => 
 // if type<exp.val>(tenv) = exp.var.texp
 // then type<(define (var : texp) val)> = void
 export const typeofDefine = (exp: A.DefineExp, tenv: E.TEnv): Result<T.VoidTExp> => {
-
     const varType : T.TExp = exp.var.texp
-    const newEnv = makeExtendTEnv([exp.var.var],[exp.var.texp],tenv)
+    const newEnv = E.makeExtendTEnv([exp.var.var],[exp.var.texp],tenv)
     const valType : Result<T.TExp> = typeofExp(exp.val, newEnv)
     const constraint:Result<boolean> = bind(valType,(Tval:T.TExp)=>checkEqualType(varType,Tval,exp))
     return bind(constraint,(_c1:boolean)=>{
@@ -269,8 +268,8 @@ export const typeofProgram = (exp: A.Program, tenv: E.TEnv): Result<T.TExp> =>
 const typeofProgramExps = (exp: A.Exp, exps: A.Exp[], tenv: E.TEnv): Result<T.TExp> => {
     const constraint : Result<T.TExp> = typeofExp(exp, tenv)
     return bind(constraint,(tExp)=> {
-            if(isDefineExp(exp)){
-                const newEnv :E.ExtendTEnv = makeExtendTEnv([exp.var.var],[exp.var.texp],tenv)
+            if(A.isDefineExp(exp)){
+                const newEnv :E.ExtendTEnv = E.makeExtendTEnv([exp.var.var],[exp.var.texp],tenv)
                 return (isEmpty(exps) ? makeOk(tExp) : typeofProgram(makeProgram(exps), newEnv))
             }
             return isEmpty(exps) ? makeOk(tExp) : typeofProgram(makeProgram(exps), tenv)
@@ -284,7 +283,7 @@ const typeofProgramExps = (exp: A.Exp, exps: A.Exp[], tenv: E.TEnv): Result<T.TE
 //      - for a symbol - record the value of the symbol in the SymbolTExp
 //        so that precise type checking can be made on ground symbol values.
 export const typeofLit = (exp: A.LitExp): Result<T.TExp> =>
-     isSymbolSExp(exp.val) ? makeOk(makeSymbolTExp()):
+     isSymbolSExp(exp.val) ? makeOk(makeSymbolTExp(exp.val)):
         isCompoundSExp(exp.val) ? makeOk(makePairTExp()):
             makeFailure("Not pair or symbol")
 
@@ -312,8 +311,9 @@ export const typeofSet = (exp: A.SetExp, tenv: E.TEnv): Result<T.VoidTExp> => {
 //      type<method_k>(class-tenv) = mk
 // Then type<class(type fields methods)>(tenv) = = [t1 * ... * tn -> type]
 export const typeofClass = (exp: A.ClassExp, tenv: E.TEnv): Result<T.TExp> => {
+    const fieldsTypes:T.TExp[] = map(((vd:VarDecl)=>vd.texp),exp.fields)
     const ct:string = exp.typeName.var
     const methondsNames:string[] = R.map((b:Binding)=>b.var.var,exp.methods)
     const methodsTypes: Result<T.TExp[]> = mapResult((b:Binding)=>typeofExp(b.val,tenv),exp.methods)
-    return bind(methodsTypes,(texp:T.TExp[])=>makeOk(makeClassTExp(ct,zipWith((name:string,returnTE:T.TExp)=>[name,returnTE],methondsNames,texp))))
+    return bind(methodsTypes,(texp:T.TExp[])=>makeOk(makeProcTExp(fieldsTypes,makeClassTExp(ct,zipWith((name:string,returnTE:T.TExp)=>[name,returnTE],methondsNames,texp)))))
 };
